@@ -55,3 +55,4 @@ npm run dev
 Доставка: Яндекс Доставка
 
 <!-- Vercel production redeploy trigger -->
+<!-- Cloudflare production rebuild trigger -->
