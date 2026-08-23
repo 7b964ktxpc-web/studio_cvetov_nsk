@@ -113,8 +113,8 @@ export default function PublicBoutique2() {
       <section className="bt2-hero">
         <div className="bt2-hero-copy">
           <p className="bt2-eyebrow">СТУДИЯ ЦВЕТОВ · НОВОСИБИРСК</p>
-          <h1>Доставка<br />букетов<br />на заказ</h1>
-          <p className="bt2-lead">Собираем цветы вручную и доставляем по Новосибирску. Поможем выбрать букет для любого повода.</p>
+          <h1>Цветы,<br />которые<br />говорят за вас</h1>
+          <p className="bt2-lead">Готовые букеты, авторские композиции и доставка по Новосибирску. Поможем выбрать цветы для подарка, праздника или просто особенного дня.</p>
           <div className="bt2-actions"><Button outline onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}>Подробнее</Button><Button onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })}>Выбрать букет</Button></div>
           <div className="bt2-hero-rule"><span /></div>
         </div>
