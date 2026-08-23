@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap');
+
+body,.reference-site,button,input,textarea,select{font-family:'Manrope',system-ui,sans-serif;letter-spacing:-.01em}
+.hero-reference h1,.reference-heading h2,.composition-reference h2,.help-reference h2,.about-copy,.extra-copy h2,.contact-reference h2,.reviews-reference h2,.footer-phone,.reference-modal h2,.panel h2,.admin-content h1,.login-card h1{font-family:'DM Serif Display',Georgia,serif;letter-spacing:-.025em;font-weight:400}
+.hero-reference h1{line-height:.9;text-wrap:balance}
+.hero-reference-sub,.composition-copy>p:not(.reference-kicker),.help-copy>p:not(.reference-kicker),.extra-copy>p:not(.reference-kicker),.contact-reference>div:first-child p:not(.reference-kicker),.about-copy p{font-family:'Manrope',system-ui,sans-serif;line-height:1.65}
+.reference-kicker,.bouquet-card small,.bouquet-card strong,.header-phone,.reference-button{font-family:'Manrope',system-ui,sans-serif}
+.reference-heading h2{font-size:clamp(48px,5.4vw,76px)}
+.bouquet-card strong{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.bouquet-card small{font-size:14px;font-weight:600;letter-spacing:.02em}
+.product-price,.price,.money{font-family:'DM Serif Display',Georgia,serif;letter-spacing:.01em}
+.reference-header nav{font-weight:500;letter-spacing:.02em}
+.reference-button{font-weight:600;letter-spacing:.01em}
+.reference-footer p,.footer-nav{font-family:'Manrope',system-ui,sans-serif}
+@media(max-width:650px){.hero-reference h1{font-size:clamp(54px,16vw,78px)}.reference-heading h2,.reviews-reference h2{font-size:46px}.composition-reference h2,.help-reference h2,.contact-reference h2{font-size:52px}}
