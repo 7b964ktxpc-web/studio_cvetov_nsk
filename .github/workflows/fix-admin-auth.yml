@@ -13,14 +13,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Harden admin authentication and loading
+      - name: Patch admin authentication
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('src/App.tsx')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('''const {data:sub}=supabase.auth.onAuthStateChange(async(_e,session)=>{if(session){const {data:isAdmin}=await Promise.race([supabase.rpc("is_admin"),new Promise<{data:boolean|null}>((resolve)=>setTimeout(()=>resolve({data:null}),10000))]);if(isAdmin){setReady(true);await load()}}else{setReady(false)}});''','''const {data:sub}=supabase.auth.onAuthStateChange((_e,session)=>{if(session){setTimeout(()=>{void (async()=>{const {data:isAdmin,error}=await Promise.race([supabase.rpc("is_admin"),new Promise<{data:boolean|null,error:Error|null}>((resolve)=>setTimeout(()=>resolve({data:null,error:new Error("Проверка доступа превысила время ожидания.")}),10000))]);if(!error&&isAdmin&&mounted){setReady(true);await load()}else if(mounted){setReady(false)}})()},0)}else{setReady(false)}});''')
+          old = s
+          login = r'''async function submit\(e:FormEvent\)\{e\.preventDefault\(\);setBusy\(true\);setError\(""\);const \{data,error\}=await supabase\.auth\.signInWithPassword\(\{email,password\}\);if\(error\)\{setError\(error\.message\);setBusy\(false\);return\}const \{data:isAdmin\}=await Promise\.race\(\[supabase\.rpc\("is_admin"\),new Promise<\{data:boolean\|null\}>\(\(resolve\)=>setTimeout\(\(\)=>resolve\(\{data:null\}\),10000\)\)\]\);if\(!isAdmin\)\{await supabase\.auth\.signOut\(\);setError\("У этого аккаунта нет доступа к админ-панели"\);setBusy\(false\);return\}onDone\(\);setBusy\(false\)\}'''
+          login_new = '''async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;const {data:isAdmin,error:adminError}=await Promise.race([supabase.rpc("is_admin"),new Promise<{data:boolean|null,error:Error|null}>((resolve)=>setTimeout(()=>resolve({data:null,error:new Error("Проверка доступа превысила время ожидания. Проверьте подключение к Supabase.")}),10000))]);if(adminError)throw adminError;if(!isAdmin){await supabase.auth.signOut();throw new Error("У этого аккаунта нет доступа к админ-панели")}onDone()}catch(err){setError(err instanceof Error?err.message:"Не удалось выполнить вход")}finally{setBusy(false)}}'''
+          s, n1 = re.subn(login, login_new, s, count=1)
+          effect = r'''const \{data:sub\}=supabase\.auth\.onAuthStateChange\(async\(_e,session\)=>\{if\(session\)\{const \{data:isAdmin\}=await Promise\.race\(\[supabase\.rpc\("is_admin"\),new Promise<\{data:boolean\|null\}>\(\(resolve\)=>setTimeout\(\(\)=>resolve\(\{data:null\}\),10000\)\)\]\);if\(isAdmin\)\{setReady\(true\);await load\(\)\}\}else\{setReady\(false\)\}\}\);'''
+          effect_new = '''const {data:sub}=supabase.auth.onAuthStateChange((_e,session)=>{if(session){setTimeout(()=>{void (async()=>{const {data:isAdmin,error}=await Promise.race([supabase.rpc("is_admin"),new Promise<{data:boolean|null,error:Error|null}>((resolve)=>setTimeout(()=>resolve({data:null,error:new Error("Проверка доступа превысила время ожидания.")}),10000))]);if(!error&&isAdmin&&mounted){setReady(true);await load()}else if(mounted){setReady(false)}})()},0)}else{setReady(false)}});'''
+          s, n2 = re.subn(effect, effect_new, s, count=1)
+          if n1 == 0 and n2 == 0:
+              raise SystemExit('Admin auth patterns were not found; refusing to create a no-op commit.')
+          if s == old:
+              raise SystemExit('No changes made.')
           p.write_text(s, encoding='utf-8')
+          print(f'Patched login={n1}, auth_listener={n2}')
           PY
       - name: Commit hardening
         run: |
