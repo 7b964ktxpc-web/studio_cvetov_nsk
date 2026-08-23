@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/wire-builder.cjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint ."
