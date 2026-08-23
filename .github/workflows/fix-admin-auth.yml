@@ -1,0 +1,39 @@
+name: Fix admin auth
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(auto): harden admin auth') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Harden admin authentication and loading
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/App.tsx')
+          s = p.read_text()
+          old = '''async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error){setError(error.message);setBusy(false);return}const {data:isAdmin}=await supabase.rpc("is_admin");if(!isAdmin){await supabase.auth.signOut();setError("У этого аккаунта нет доступа к админ-панели");setBusy(false);return}onDone();setBusy(false)}'''
+          new = '''async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;const adminCheck=await Promise.race([supabase.rpc("is_admin"),new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error("Проверка доступа превысила время ожидания. Проверьте подключение к Supabase.")),10000))]);const {data:isAdmin,error:adminError}=adminCheck as Awaited<ReturnType<typeof supabase.rpc>>;if(adminError)throw adminError;if(!isAdmin){await supabase.auth.signOut();throw new Error("У этого аккаунта нет доступа к админ-панели")}onDone()}catch(err){setError(err instanceof Error?err.message:"Не удалось выполнить вход")}finally{setBusy(false)}}'''
+          if old in s:
+              s=s.replace(old,new,1)
+          old2 = '''useEffect(()=>{let mounted=true;(async()=>{const {data}=await supabase.auth.getSession();if(data.session){const {data:isAdmin}=await supabase.rpc("is_admin");if(mounted&&isAdmin){setReady(true);await load()}}setChecking(false)})();const {data:sub}=supabase.auth.onAuthStateChange(async(_e,session)=>{if(session){const {data:isAdmin}=await supabase.rpc("is_admin");if(isAdmin){setReady(true);await load()}}else{setReady(false)}});return()=>{mounted=false;sub.subscription.unsubscribe()}},[]);'''
+          new2 = '''useEffect(()=>{let mounted=true;(async()=>{try{const {data}=await supabase.auth.getSession();if(data.session){const {data:isAdmin,error}=await Promise.race([supabase.rpc("is_admin"),new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error("timeout")),10000))]) as Awaited<ReturnType<typeof supabase.rpc>>;if(!error&&mounted&&isAdmin){setReady(true);await load()}}}finally{if(mounted)setChecking(false)}})();const {data:sub}=supabase.auth.onAuthStateChange(async(_e,session)=>{if(session){const {data:isAdmin,error}=await supabase.rpc("is_admin");if(!error&&isAdmin){setReady(true);await load()}else if(mounted){setReady(false)}}else{setReady(false)}});return()=>{mounted=false;sub.subscription.unsubscribe()}},[]);'''
+          if old2 in s:
+              s=s.replace(old2,new2,1)
+          p.write_text(s)
+          PY
+      - name: Commit hardening
+        run: |
+          if git diff --quiet; then echo 'No changes needed.'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/App.tsx
+          git commit -m 'chore(auto): harden admin auth'
+          git push
