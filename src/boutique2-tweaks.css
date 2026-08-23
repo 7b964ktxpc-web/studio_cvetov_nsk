@@ -11,4 +11,4 @@
   .bt2-florist .bt2-form-photo>img{display:none}
   .bt2-florist .bt2-form{position:relative;left:auto;top:auto;transform:none;width:100%;box-sizing:border-box;margin:0 auto;padding:32px 24px;border-radius:12px;background:rgba(247,241,237,.94);backdrop-filter:blur(12px);box-shadow:0 20px 45px rgba(59,42,35,.12)}
 }
-/* trigger production redeploy after final mobile polish */
+/* final mobile storefront pass */
