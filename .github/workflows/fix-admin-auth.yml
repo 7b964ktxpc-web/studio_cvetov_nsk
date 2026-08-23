@@ -13,32 +13,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch admin authentication
+      - name: Patch admin authentication and mobile navigation
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
+
           p = Path('src/App.tsx')
           s = p.read_text(encoding='utf-8')
           old = s
           login = r'''async function submit\(e:FormEvent\)\{e\.preventDefault\(\);setBusy\(true\);setError\(""\);const \{data,error\}=await supabase\.auth\.signInWithPassword\(\{email,password\}\);if\(error\)\{setError\(error\.message\);setBusy\(false\);return\}const \{data:isAdmin\}=await Promise\.race\(\[supabase\.rpc\("is_admin"\),new Promise<\{data:boolean\|null\}>\(\(resolve\)=>setTimeout\(\(\)=>resolve\(\{data:null\}\),10000\)\)\]\);if\(!isAdmin\)\{await supabase\.auth\.signOut\(\);setError\("У этого аккаунта нет доступа к админ-панели"\);setBusy\(false\);return\}onDone\(\);setBusy\(false\)\}'''
           login_new = '''async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;const {data:isAdmin,error:adminError}=await Promise.race([supabase.rpc("is_admin"),new Promise<{data:boolean|null,error:Error|null}>((resolve)=>setTimeout(()=>resolve({data:null,error:new Error("Проверка доступа превысила время ожидания. Проверьте подключение к Supabase.")}),10000))]);if(adminError)throw adminError;if(!isAdmin){await supabase.auth.signOut();throw new Error("У этого аккаунта нет доступа к админ-панели")}onDone()}catch(err){setError(err instanceof Error?err.message:"Не удалось выполнить вход")}finally{setBusy(false)}}'''
           s, n1 = re.subn(login, login_new, s, count=1)
+
           effect = r'''const \{data:sub\}=supabase\.auth\.onAuthStateChange\(async\(_e,session\)=>\{if\(session\)\{const \{data:isAdmin\}=await Promise\.race\(\[supabase\.rpc\("is_admin"\),new Promise<\{data:boolean\|null\}>\(\(resolve\)=>setTimeout\(\(\)=>resolve\(\{data:null\}\),10000\)\)\]\);if\(isAdmin\)\{setReady\(true\);await load\(\)\}\}else\{setReady\(false\)\}\}\);'''
           effect_new = '''const {data:sub}=supabase.auth.onAuthStateChange((_e,session)=>{if(session){setTimeout(()=>{void (async()=>{const {data:isAdmin,error}=await Promise.race([supabase.rpc("is_admin"),new Promise<{data:boolean|null,error:Error|null}>((resolve)=>setTimeout(()=>resolve({data:null,error:new Error("Проверка доступа превысила время ожидания.")}),10000))]);if(!error&&isAdmin&&mounted){setReady(true);await load()}else if(mounted){setReady(false)}})()},0)}else{setReady(false)}});'''
           s, n2 = re.subn(effect, effect_new, s, count=1)
-          if n1 == 0 and n2 == 0:
-              raise SystemExit('Admin auth patterns were not found; refusing to create a no-op commit.')
+
+          marker = 'function ProductModal({value,categories,busy,onChange,onSave,onClose,uploadImage}:{value:any;categories:Category[];busy:boolean;onChange:(v:any)=>void;onSave:(e:FormEvent)=>void;onClose:()=>void;uploadImage:(f:File)=>Promise<string|null>})'
+          if 'Назад к товарам' not in s and marker in s:
+              s = s.replace(
+                  '<div className="modal-title-row"><div><h2>{value.id?"Редактирование букета":"Новый букет"}</h2><p>Изменения сразу попадут на публичный сайт.</p></div></div>',
+                  '<div className="modal-title-row"><button type="button" className="modal-back-btn" onClick={onClose}>← Назад к товарам</button><div><h2>{value.id?"Редактирование букета":"Новый букет"}</h2><p>Изменения сразу попадут на публичный сайт.</p></div></div>'
+              )
+
           if s == old:
-              raise SystemExit('No changes made.')
+              raise SystemExit('No App.tsx changes made; refusing no-op commit.')
           p.write_text(s, encoding='utf-8')
-          print(f'Patched login={n1}, auth_listener={n2}')
+
+          css = Path('src/admin.css')
+          c = css.read_text(encoding='utf-8')
+          if '.modal-back-btn{' not in c:
+              c += '\n.modal-back-btn{border:0;background:none;color:var(--ad-brown);padding:0 0 8px;font:600 12px Manrope;cursor:pointer}.modal-back-btn:hover{text-decoration:underline}@media(max-width:760px){.admin-modal{padding-top:18px}.modal-back-btn{font-size:13px;padding:4px 0 12px}}\n'
+              css.write_text(c, encoding='utf-8')
+          print(f'Patched login={n1}, auth_listener={n2}, mobile_back={"yes" if "Назад к товарам" in s else "no"}')
           PY
-      - name: Commit hardening
+      - name: Commit changes
         run: |
           if git diff --quiet; then echo 'No changes needed.'; exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/App.tsx
+          git add src/App.tsx src/admin.css
           git commit -m 'chore(auto): harden admin auth'
           git push
