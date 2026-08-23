@@ -53,3 +53,5 @@ npm run dev
 Координаты: 54.993045, 82.833637
 
 Доставка: Яндекс Доставка
+
+<!-- Vercel production redeploy trigger -->
