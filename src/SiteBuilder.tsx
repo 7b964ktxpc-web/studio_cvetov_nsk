@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GripVertical, Eye, EyeOff, Save, RotateCcw, Plus, Trash2 } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import "./site-builder.css";
 
 type Section={id:string;title:string;visible:boolean};
 type Theme={background?:string;accent?:string;radius?:number};
