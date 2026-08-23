@@ -1,2 +1,14 @@
 .bt2-logo,.bt2-logo span{font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:500;line-height:1;letter-spacing:.22em}.bt2-hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(52px,5.2vw,68px);font-weight:500;line-height:.9;letter-spacing:-.01em;max-width:500px;margin-bottom:22px}@media(max-width:980px){.bt2-logo,.bt2-logo span{font-size:24px}.bt2-hero h1{font-size:clamp(48px,12vw,62px);line-height:.92;max-width:100%}}
-/* trigger production redeploy after final typography tuning */
+
+/* Mobile polish: centered hero divider, clean florist form, swipe-ready bestseller area. */
+.bt2-hero-rule{margin-left:auto;margin-right:auto}
+.bt2-carousel{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+@media(max-width:980px){
+  .bt2-hero-rule{width:100%;margin-left:auto;margin-right:auto}
+  .bt2-best .bt2-carousel{min-height:0;overflow:hidden}
+  .bt2-best .bt2-main-best{width:100%;box-sizing:border-box}
+  .bt2-florist .bt2-form-photo{min-height:0;background:linear-gradient(180deg,#eadfd8 0%,#d8c7bf 100%);padding:0 18px 58px;overflow:visible}
+  .bt2-florist .bt2-form-photo>img{display:none}
+  .bt2-florist .bt2-form{position:relative;left:auto;top:auto;transform:none;width:100%;box-sizing:border-box;margin:0 auto;padding:32px 24px;border-radius:12px;background:rgba(247,241,237,.94);backdrop-filter:blur(12px);box-shadow:0 20px 45px rgba(59,42,35,.12)}
+}
+/* trigger production redeploy after final mobile polish */
