@@ -6,6 +6,7 @@ import "./styles.css";
 import "./theme.css";
 import "./boutique.css";
 import "./boutique2.css";
+import "./boutique-reference.css";
 
 function Root(){const path=window.location.pathname;return path.startsWith("/admin")?<App/>:<PublicBoutique2/>}
 createRoot(document.getElementById("root")!).render(<StrictMode><Root/></StrictMode>);
