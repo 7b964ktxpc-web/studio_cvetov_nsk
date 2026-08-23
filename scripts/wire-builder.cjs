@@ -1,0 +1,11 @@
+const fs=require('fs');
+const p='src/App.tsx';
+let s=fs.readFileSync(p,'utf8');
+if(!s.includes('import SiteBuilder from "./SiteBuilder";')) s=s.replace('import "./admin.css";','import "./admin.css";\nimport SiteBuilder from "./SiteBuilder";');
+const nav='const nav=[{id:"dashboard",label:"Обзор",icon:<Package size={17}/>},{id:"products",label:"Товары",icon:<Package size={17}/>},{id:"categories",label:"Категории",icon:<Users size={17}/>},{id:"reviews",label:"Отзывы",icon:<Star size={17}/>},{id:"orders",label:"Заказы",icon:<RefreshCw size={17}/>},{id:"settings",label:"Настройки",icon:<Settings size={17}/>}] as const;';
+const navNew='const nav=[{id:"dashboard",label:"Обзор",icon:<Package size={17}/>},{id:"products",label:"Товары",icon:<Package size={17}/>},{id:"categories",label:"Категории",icon:<Users size={17}/>},{id:"reviews",label:"Отзывы",icon:<Star size={17}/>},{id:"orders",label:"Заказы",icon:<RefreshCw size={17}/>},{id:"settings",label:"Настройки",icon:<Settings size={17}/>},{id:"builder",label:"Конструктор",icon:<Settings size={17}/>} ] as const;';
+if(s.includes(nav)) s=s.replace(nav,navNew);
+const render='{section==="settings"&&<SettingsPanel value={settings} onSubmit={saveSettings}/>}';
+if(s.includes(render) && !s.includes('{section==="builder"&&<SiteBuilder/>}')) s=s.replace(render,render+' {section==="builder"&&<SiteBuilder/>}');
+fs.writeFileSync(p,s);
+console.log('site builder wired at build time');
