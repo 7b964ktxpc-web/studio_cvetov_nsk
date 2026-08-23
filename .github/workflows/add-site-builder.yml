@@ -1,0 +1,42 @@
+name: Wire site builder
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  wire:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(auto): wire site builder') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wire builder into admin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/App.tsx'); s=p.read_text()
+          old=s
+          if 'import SiteBuilder from "./SiteBuilder";' not in s:
+              s=s.replace('import "./admin.css";','import "./admin.css";\nimport SiteBuilder from "./SiteBuilder";')
+          marker='{id:"settings",label:"Настройки",icon:<Settings size={17}/>}]
+          if 'id:"builder",label:"Конструктор"' not in s:
+              s=s.replace(marker,'{id:"settings",label:"Настройки",icon:<Settings size={17}/>},{id:"builder",label:"Конструктор",icon:<Settings size={17}/>} ]')
+          if '{section==="builder"&&<SiteBuilder/>}' not in s:
+              s=s.replace('{section==="settings"&&<SettingsPanel value={settings} onSubmit={saveSettings}/>}','{section==="settings"&&<SettingsPanel value={settings} onSubmit={saveSettings}/>} {section==="builder"&&<SiteBuilder/>}')
+          if s==old: raise SystemExit('No builder wiring changes made')
+          p.write_text(s)
+          PY
+      - name: Add builder styles
+        run: |
+          cat >> src/admin.css <<'CSS'
+          .builder-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.builder-head h2{font:600 34px 'Cormorant Garamond',serif;margin:0}.builder-head p{margin:6px 0;color:var(--ad-muted);font-size:13px}.builder-actions{display:flex;gap:8px;flex-wrap:wrap}.builder-layout{display:grid;grid-template-columns:1.4fr .8fr;gap:22px}.builder-list{padding:16px;display:grid;gap:8px}.builder-row{display:grid;grid-template-columns:24px 58px 1fr 38px 38px;gap:8px;align-items:center;padding:10px;border:1px solid var(--ad-line);border-radius:12px;background:#fff}.builder-row.is-hidden{opacity:.55}.builder-row input{border:1px solid var(--ad-line);border-radius:8px;padding:10px;background:#fffdfa;font:500 13px Manrope;color:var(--ad-ink)}.builder-order{display:flex;gap:4px}.builder-order button{width:26px;height:28px;border:1px solid var(--ad-line);background:var(--ad-soft);border-radius:6px;cursor:pointer}.builder-order button:disabled{opacity:.35}.builder-icon{width:34px;height:34px;border:1px solid var(--ad-line);background:#fff;border-radius:8px;display:grid;place-items:center;color:var(--ad-brown);cursor:pointer}.builder-icon.danger{color:var(--ad-danger)}.builder-theme{padding:20px;display:grid;gap:14px}.builder-theme label{display:grid;gap:6px;font-size:11px;color:var(--ad-muted)}.builder-theme input{padding:10px;border:1px solid var(--ad-line);border-radius:8px;background:#fffdfa}.builder-preview{min-height:150px;border:1px solid var(--ad-line);padding:24px;display:flex;flex-direction:column;gap:8px}.builder-preview strong{font:600 28px 'Cormorant Garamond',serif}.builder-preview span{font-weight:700}.builder-preview small{color:var(--ad-muted)}
+          @media(max-width:900px){.builder-head,.builder-layout{grid-template-columns:1fr;display:grid}.builder-row{grid-template-columns:20px 48px 1fr 34px 34px}.builder-actions{justify-content:flex-start}}
+          CSS
+      - name: Commit
+        run: |
+          if git diff --quiet; then echo 'No changes needed'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/App.tsx src/admin.css
+          git commit -m 'chore(auto): wire site builder'
+          git push
